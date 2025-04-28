@@ -130,8 +130,8 @@ struct BookDetailView: View {
                     } else {
                         // Liste der gefilterten Highlights (aus ViewModel)
                         LazyVStack(alignment: .leading, spacing: 15) {
-                            // TODO: Verwende viewModel.filteredHighlights wenn Suche aktiv
-                            ForEach(viewModel.highlights) { highlight in
+                            // TODO: Füge filteredHighlights zum ViewModel hinzu, wenn Suche wieder aktiv
+                            ForEach(viewModel.highlights.sorted(by: { $0.page < $1.page })) { highlight in
                                 // Drucke das Highlight, das an die Karte übergeben wird
                                 let _ = print("-- Wird angezeigt: Highlight ID \(highlight.id), Text: '\(highlight.text)'")
                                 
