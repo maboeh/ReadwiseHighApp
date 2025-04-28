@@ -29,10 +29,18 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		415261F52DBD7549008C425B /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		417C74E82DBB9B5900B70FE6 = {
 			isa = PBXGroup;
 			children = (
 				417C74F32DBB9B5900B70FE6 /* ReadwiseHighApp */,
+				415261F52DBD7549008C425B /* Frameworks */,
 				417C74F22DBB9B5900B70FE6 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -94,6 +102,9 @@
 			);
 			mainGroup = 417C74E82DBB9B5900B70FE6;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				415261F62DBD779F008C425B /* XCLocalSwiftPackageReference "ReadwiseKit" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 417C74F22DBB9B5900B70FE6 /* Products */;
 			projectDirPath = "";
@@ -268,6 +279,7 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 15.4;
 				MARKETING_VERSION = 1.0;
+				NEW_SETTING = "";
 				PRODUCT_BUNDLE_IDENTIFIER = maboeh.ReadwiseHighApp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -307,6 +319,7 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 15.4;
 				MARKETING_VERSION = 1.0;
+				NEW_SETTING = "";
 				PRODUCT_BUNDLE_IDENTIFIER = maboeh.ReadwiseHighApp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -341,6 +354,13 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		415261F62DBD779F008C425B /* XCLocalSwiftPackageReference "ReadwiseKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ReadwiseKit;
+		};
+/* End XCLocalSwiftPackageReference section */
 	};
 	rootObject = 417C74E92DBB9B5900B70FE6 /* Project object */;
 }

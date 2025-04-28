@@ -1,0 +1,112 @@
+import Foundation
+import Combine
+import SwiftUI // Für @Published etc.
+
+// Importiere die benötigten Modelle und den DataManager
+// Annahme: ReadwiseDataManager und Modelle sind im Haupt-Target verfügbar.
+// import ReadwiseHighApp // Normalerweise nicht nötig, wenn alles im selben Target ist
+
+// ViewModel für die BookDetailView
+@MainActor // Stellt sicher, dass @Published Updates auf dem Main Thread passieren
+class BookDetailViewModel: ObservableObject {
+    let book: BookPreview // Das anzuzeigende Buch
+    private let dataManager: ReadwiseDataManager
+
+    // MARK: - Published Properties (State für die View)
+    @Published var highlights: [HighlightItem] = []
+    @Published var isLoadingHighlights: Bool = false
+    @Published var highlightError: String? = nil
+    @Published var copySuccessMessage: Bool = false // Zustand für Kopiervorgang
+
+    // MARK: - Computed Properties
+    var filteredHighlights: [HighlightItem] {
+        // Suchlogik (falls wir sie später wieder hinzufügen wollen)
+        // Hier vorerst alle Highlights zurückgeben
+        return highlights
+    }
+
+    var allHighlightsText: String {
+        let highlightsToCopy = filteredHighlights
+        return highlightsToCopy.map { highlight in
+            var detailText = "\"\\(highlight.text)\""
+            if !highlight.chapterTitle.isEmpty {
+                detailText += "\nKapitel: \\(highlight.chapterTitle)"
+            }
+            if highlight.page > 0 {
+                detailText += " (Seite \\(highlight.page))"
+            }
+            return detailText
+        }.joined(separator: "\n\n----------\n\n")
+    }
+
+    // MARK: - Initializer
+    init(book: BookPreview, dataManager: ReadwiseDataManager) {
+        self.book = book
+        self.dataManager = dataManager
+        print("✨ BookDetailViewModel initialized for book: '\\(book.title)' (ID: \\(book.readwiseId ?? -1))")
+        // Optional: Highlights direkt im init laden, wenn gewünscht
+        // loadHighlights()
+    }
+
+    // MARK: - Public Methods (Actions for the View)
+
+    func loadHighlights() {
+        print("-> [ViewModel DEBUG] loadHighlights aufgerufen für Buch-ID: \\(book.readwiseId ?? -1).")
+        guard let bookId = book.readwiseId else {
+            print("<- [ViewModel DEBUG] loadHighlights - Keine gültige Buch-ID.")
+            self.highlightError = "Buch-ID nicht gefunden."
+            return
+        }
+
+        // Vermeide erneutes Laden, nur wenn bereits geladen wird
+        if isLoadingHighlights {
+             print("<- [ViewModel DEBUG] loadHighlights - Lädt bereits.")
+             return
+        }
+
+        print("   [ViewModel DEBUG] Starte Ladevorgang für Highlights...")
+        isLoadingHighlights = true
+        highlights = []
+        highlightError = nil
+
+        // DataManager aufrufen
+        dataManager.loadHighlights(for: bookId) { [weak self] (result: Result<[HighlightItem], Error>) in
+             // Sicherstellen, dass wir noch existieren und auf dem Main Thread sind
+             // (dataManager sollte das eigentlich schon sicherstellen, aber doppelt hält besser)
+            // DispatchQueue.main.async { // Nicht mehr nötig, da dataManager dies tun sollte und ViewModel @MainActor ist
+                 guard let self = self else { return }
+                 print("<- [ViewModel DEBUG] loadHighlights beendet (DataManager hat geliefert).")
+                 print("   [ViewModel DEBUG] DataManager Ergebnis: \\(result)")
+                 self.isLoadingHighlights = false
+                 switch result {
+                 case .success(let fetchedHighlights):
+                     print("✅ [ViewModel] Highlights geladen: \\(fetchedHighlights.count) Stück")
+                     self.highlights = fetchedHighlights
+                     self.highlightError = nil
+                 case .failure(let error):
+                     print("❌ [ViewModel] Fehler beim Laden der Highlights: \\(error)")
+                     self.highlightError = "Fehler: \\(error.localizedDescription)"
+                 }
+            // }
+        }
+    }
+
+    func copyAllHighlightsToClipboard() {
+        #if os(iOS)
+        UIPasteboard.general.string = allHighlightsText
+        #elseif os(macOS)
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(allHighlightsText, forType: .string)
+        #endif
+
+        copySuccessMessage = true
+        // Verwende Task.sleep für asynchrone Wartezeit in @MainActor Context
+        Task {
+            try? await Task.sleep(nanoseconds: 2_000_000_000) // 2 Sekunden
+            // Stelle sicher, dass wir immer noch im MainActor Kontext sind
+             await MainActor.run {
+                self.copySuccessMessage = false
+            }
+        }
+    }
+} 
