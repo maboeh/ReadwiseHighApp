@@ -171,10 +171,7 @@ public class ReadwiseDataManager: ObservableObject {
                 }
             }
 
-            var pageNum = 0
-            if apiHighlight.location_type == "page", let loc = apiHighlight.location {
-                pageNum = loc
-            }
+            let pageNum = apiHighlight.location ?? 0
 
             // Verwende den Initializer von HighlightItem (aus Models.swift)
             return HighlightItem(

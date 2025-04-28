@@ -135,12 +135,18 @@ struct BookDetailView: View {
                                 // Drucke das Highlight, das an die Karte übergeben wird
                                 let _ = print("-- Wird angezeigt: Highlight ID \(highlight.id), Text: '\(highlight.text)'")
                                 
-                                
-                                Text(highlight.text)
-                                    .padding(.bottom, 5)
-                                Text("Seite: \(highlight.page), Kapitel: \(highlight.chapterTitle)")
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(highlight.text)
+                                        .padding(.bottom, 5)
+                                    HStack(spacing: 10) {
+                                        Text("Seite: \(highlight.page)")
+                                        if !highlight.chapterTitle.isEmpty {
+                                            Text("Kapitel: \(highlight.chapterTitle)")
+                                        }
+                                    }
                                     .font(.caption)
                                     .foregroundColor(.secondary)
+                                }
                                 
                                 Divider()
                             }
