@@ -1,5 +1,5 @@
 import Foundation
-import SwiftUI // Nötig für Color, etc. falls in Zukunft verwendet
+import SwiftUI 
 
 // MARK: - Modelltypen und Enums
 

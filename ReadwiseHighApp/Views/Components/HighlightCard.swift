@@ -21,13 +21,11 @@ struct HighlightCard: View {
     private var detailText: String? {
         var details: [String] = []
         if !highlight.chapterTitle.isEmpty {
-            details.append("Kapitel: \\(highlight.chapterTitle)")
+            details.append("Kapitel: \(highlight.chapterTitle)")
         }
         if highlight.page > 0 {
-            details.append("Seite \\(highlight.page)")
+            details.append("Seite \(highlight.page)")
         }
-        // Füge ggf. Datum hinzu:
-        // if let date = highlight.date { details.append(dateFormatter.string(from: date)) }
         
         if details.isEmpty {
             return nil // Gib nil zurück, wenn keine Details vorhanden sind
@@ -53,7 +51,6 @@ struct HighlightCard: View {
                     Spacer() // <- Spacer innerhalb des if-Zweigs
                 } else {
                     // Zeige Text in Anführungszeichen an
-                    // Stelle sicher, dass die Interpolation korrekt ist
                     Text("\"\(highlight.text)\"") 
                         .font(.body)
                         .padding(.leading, 12) // Abstand zum Rand
@@ -79,13 +76,7 @@ struct HighlightCard: View {
                 }
                 .padding(.horizontal, 5)
             }
-            // Ansonsten wird nichts angezeigt (kein else benötigt)
-
-            // Divider wird in BookDetailView bereits nach jeder Karte hinzugefügt
-            // Divider()
         }
-        // Kein horizontaler Padding mehr auf der VStack, da die Karte selbst den Hintergrund hat
-        // .padding(.horizontal)
     }
 }
 

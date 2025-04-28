@@ -1,12 +1,6 @@
 import SwiftUI
-import Foundation // Für grundlegende Typen wie UUID etc.
-// Importiere potenziell fehlende Module/Typen
-// Annahme: Typen sind im selben Modul, aber expliziter Import könnte helfen
-// Passe dies an, falls du spezifische Module verwendest.
-// import Models // Falls du eine Models.swift oder ein Models-Modul hast
-// import Services // Falls du eine Services.swift oder ein Services-Modul hast
+import Foundation 
 
-// Alle benötigten Typen importieren (Modulimport hinzugefügt)
 
 // Hauptansicht der App
 public struct MainContentView: View {

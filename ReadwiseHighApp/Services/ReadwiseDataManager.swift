@@ -1,6 +1,6 @@
 import Foundation
 import Combine
-import SwiftUI // Für @Published etc.
+import SwiftUI 
 
 // Data Manager als primäre Schnittstelle für die UI
 public class ReadwiseDataManager: ObservableObject {

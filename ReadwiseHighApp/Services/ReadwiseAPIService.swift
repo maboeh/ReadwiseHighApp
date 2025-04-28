@@ -1,7 +1,5 @@
 import Foundation
 import SwiftUI
-import Combine // Import Combine, falls benötigt für zukünftige Netzwerk-Calls
-// import ReadwiseHighApp // Füge diesen Import hinzu, falls Typen nicht gefunden werden
 
 // MARK: - API Response Models (Codable)
 

@@ -1,13 +1,5 @@
 import SwiftUI
-// import ReadwiseHighApp
 
-// MARK: - UI Komponenten
-
-// Suchleiste - GELÖSCHT, da in eigener Datei SearchBar.swift
-
-// BookCardView - GELÖSCHT, da in eigener Datei BookCardView.swift
-
-// Vereinfachte BookDetailView - GELÖSCHT, da in eigener Datei BookDetailView.swift
 
 // Filter-Button
 public struct CategoryFilterButton: View {

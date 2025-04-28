@@ -75,16 +75,13 @@ struct BookDetailView: View {
                     }
                     .padding(.horizontal)
 
-                    // Suchleiste (verwende die Komponente)
-                    // SearchBar(text: $searchText) // Später wieder integrieren
-                    //    .padding(.horizontal)
-                    //    .padding(.top, 8)
+                   
 
                     // Anzeige Anzahl gefundener Highlights (basiert auf ViewModel)
                     if !searchText.isEmpty && !viewModel.highlights.isEmpty {
                         // TODO: Füge filteredHighlights zum ViewModel hinzu, wenn Suche wieder aktiv
                         Text("Suche aktiv - Anzeige gefilterter Highlights muss im VM implementiert werden")
-//                        Text("\(viewModel.filteredHighlights.count) von \(viewModel.highlights.count) Highlights gefunden")
+                        
                             .font(.caption)
                             .foregroundColor(.secondary)
                             .padding(.horizontal)
@@ -138,9 +135,7 @@ struct BookDetailView: View {
                                 // Drucke das Highlight, das an die Karte übergeben wird
                                 let _ = print("-- Wird angezeigt: Highlight ID \(highlight.id), Text: '\(highlight.text)'")
                                 
-                                // Verwende die HighlightCard Komponente
-                                // HighlightCard(highlight: highlight, searchText: searchText) // Später wieder integrieren
-                                // Stattdessen einfacher Text:
+                                
                                 Text(highlight.text)
                                     .padding(.bottom, 5)
                                 Text("Seite: \(highlight.page), Kapitel: \(highlight.chapterTitle)")
@@ -196,25 +191,8 @@ struct BookDetailView_Previews: PreviewProvider {
     }
 }
 
-// Der spezielle Preview-Initializer wird nicht mehr benötigt,
-// da die Preview jetzt den regulären Initializer verwendet (indirekt)
-// oder den neuen init(book:dataManager:).
-// Lösche die folgende Extension:
-/*
-extension BookDetailView {
-    init(book: BookPreview, previewHighlights: [HighlightItem]) {
-        // ... alter Code ...
-    }
-}
-*/
+
 #endif
 
-// Ensure NO struct HighlightItem or struct LocalHighlightItem definition exists here.
-// Delete any uncommented struct definitions below this line.
 
-// Beispiel: Mögliche übrig gebliebene Definition (wird gelöscht)
-// struct HighlightItem: Identifiable, Codable, Hashable { ... }
-
-// Beispiel: Andere mögliche übrig gebliebene Definition (wird gelöscht)
-// struct LocalHighlightItem: Identifiable, Codable, Equatable { ... }
 

@@ -1,8 +1,6 @@
 import Foundation
 import SwiftUI
 
-// Lokale Typaliase für die Vorschau-Daten
-// Sie müssen mit den in ReadwiseHighApp.swift definierten Typen kompatibel sein
 public struct LocalBookPreview {
     public var id: UUID
     public var title: String
@@ -64,9 +62,8 @@ public struct LocalHighlightItem {
     }
 }
 
-/// Beispieldaten für die Vorschau und Development-Mode
 public struct PreviewData {
-    /// Beispielbücher
+    
     public static let sampleBooks: [LocalBookPreview] = [
         LocalBookPreview(
             id: UUID(),
@@ -125,7 +122,7 @@ public struct PreviewData {
         )
     ]
 
-    /// Beispielhighlights für das erste Buch
+    
     public static let sampleHighlightsBook1: [LocalHighlightItem] = [
         LocalHighlightItem(
             id: UUID(),
@@ -159,7 +156,7 @@ public struct PreviewData {
         )
     ]
 
-    /// Beispielhighlights für das zweite Buch
+   
     public static let sampleHighlightsBook2: [LocalHighlightItem] = [
         LocalHighlightItem(
             id: UUID(),
@@ -183,6 +180,6 @@ public struct PreviewData {
         )
     ]
 
-    /// Alle Beispielhighlights
+    
     public static let allHighlights: [LocalHighlightItem] = sampleHighlightsBook1 + sampleHighlightsBook2
 }

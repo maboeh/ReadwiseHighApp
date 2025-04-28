@@ -2,9 +2,7 @@ import Foundation
 import Combine
 import SwiftUI // Für @Published etc.
 
-// Importiere die benötigten Modelle und den DataManager
-// Annahme: ReadwiseDataManager und Modelle sind im Haupt-Target verfügbar.
-// import ReadwiseHighApp // Normalerweise nicht nötig, wenn alles im selben Target ist
+
 
 // ViewModel für die BookDetailView
 @MainActor // Stellt sicher, dass @Published Updates auf dem Main Thread passieren
@@ -44,8 +42,7 @@ class BookDetailViewModel: ObservableObject {
         self.book = book
         self.dataManager = dataManager
         print("✨ BookDetailViewModel initialized for book: '\\(book.title)' (ID: \\(book.readwiseId ?? -1))")
-        // Optional: Highlights direkt im init laden, wenn gewünscht
-        // loadHighlights()
+        
     }
 
     // MARK: - Public Methods (Actions for the View)
@@ -69,11 +66,9 @@ class BookDetailViewModel: ObservableObject {
         highlights = []
         highlightError = nil
 
-        // DataManager aufrufen
+        
         dataManager.loadHighlights(for: bookId) { [weak self] (result: Result<[HighlightItem], Error>) in
-             // Sicherstellen, dass wir noch existieren und auf dem Main Thread sind
-             // (dataManager sollte das eigentlich schon sicherstellen, aber doppelt hält besser)
-            // DispatchQueue.main.async { // Nicht mehr nötig, da dataManager dies tun sollte und ViewModel @MainActor ist
+            
                  guard let self = self else { return }
                  print("<- [ViewModel DEBUG] loadHighlights beendet (DataManager hat geliefert).")
                  print("   [ViewModel DEBUG] DataManager Ergebnis: \\(result)")
@@ -102,8 +97,7 @@ class BookDetailViewModel: ObservableObject {
         copySuccessMessage = true
         // Verwende Task.sleep für asynchrone Wartezeit in @MainActor Context
         Task {
-            try? await Task.sleep(nanoseconds: 2_000_000_000) // 2 Sekunden
-            // Stelle sicher, dass wir immer noch im MainActor Kontext sind
+            try? await Task.sleep(nanoseconds: 2_000_000_000) 
              await MainActor.run {
                 self.copySuccessMessage = false
             }

@@ -6,8 +6,7 @@ import UIKit
 import AppKit
 #endif
 
-// Import der benötigten Modelle am einfachsten aus dem Hauptmodul
-// Da sich Models.swift im Root-Verzeichnis befindet, sind diese Typen im gesamten Projekt verfügbar
+
 
 struct BookCardView: View {
     let book: Any // Verwende Any um Typprobleme zu vermeiden
