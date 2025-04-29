@@ -26,12 +26,12 @@ class BookDetailViewModel: ObservableObject {
     var allHighlightsText: String {
         let highlightsToCopy = filteredHighlights
         return highlightsToCopy.map { highlight in
-            var detailText = "\"\\(highlight.text)\""
+            var detailText = "\"\(highlight.text)\""
             if !highlight.chapterTitle.isEmpty {
-                detailText += "\nKapitel: \\(highlight.chapterTitle)"
+                detailText += "\nKapitel: \(highlight.chapterTitle)"
             }
             if highlight.page > 0 {
-                detailText += " (Seite \\(highlight.page))"
+                detailText += " (Seite \(highlight.page))"
             }
             return detailText
         }.joined(separator: "\n\n----------\n\n")
@@ -41,14 +41,14 @@ class BookDetailViewModel: ObservableObject {
     init(book: BookPreview, dataManager: ReadwiseDataManager) {
         self.book = book
         self.dataManager = dataManager
-        print("✨ BookDetailViewModel initialized for book: '\\(book.title)' (ID: \\(book.readwiseId ?? -1))")
+        print("✨ BookDetailViewModel initialized for book: '\(book.title)' (ID: \(book.readwiseId ?? -1))")
         
     }
 
     // MARK: - Public Methods (Actions for the View)
 
     func loadHighlights() {
-        print("-> [ViewModel DEBUG] loadHighlights aufgerufen für Buch-ID: \\(book.readwiseId ?? -1).")
+        print("-> [ViewModel DEBUG] loadHighlights aufgerufen für Buch-ID: \(book.readwiseId ?? -1).")
         guard let bookId = book.readwiseId else {
             print("<- [ViewModel DEBUG] loadHighlights - Keine gültige Buch-ID.")
             self.highlightError = "Buch-ID nicht gefunden."
@@ -71,16 +71,16 @@ class BookDetailViewModel: ObservableObject {
             
                  guard let self = self else { return }
                  print("<- [ViewModel DEBUG] loadHighlights beendet (DataManager hat geliefert).")
-                 print("   [ViewModel DEBUG] DataManager Ergebnis: \\(result)")
+                 print("   [ViewModel DEBUG] DataManager Ergebnis: \(result)")
                  self.isLoadingHighlights = false
                  switch result {
                  case .success(let fetchedHighlights):
-                     print("✅ [ViewModel] Highlights geladen: \\(fetchedHighlights.count) Stück")
+                     print("✅ [ViewModel] Highlights geladen: \(fetchedHighlights.count) Stück")
                      self.highlights = fetchedHighlights
                      self.highlightError = nil
                  case .failure(let error):
-                     print("❌ [ViewModel] Fehler beim Laden der Highlights: \\(error)")
-                     self.highlightError = "Fehler: \\(error.localizedDescription)"
+                     print("❌ [ViewModel] Fehler beim Laden der Highlights: \(error)")
+                     self.highlightError = "Fehler: \(error.localizedDescription)"
                  }
             // }
         }
