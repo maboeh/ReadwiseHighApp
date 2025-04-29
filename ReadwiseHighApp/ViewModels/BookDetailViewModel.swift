@@ -30,9 +30,6 @@ class BookDetailViewModel: ObservableObject {
             if !highlight.chapterTitle.isEmpty {
                 detailText += "\nKapitel: \(highlight.chapterTitle)"
             }
-            if highlight.page > 0 {
-                detailText += " (Seite \(highlight.page))"
-            }
             return detailText
         }.joined(separator: "\n\n----------\n\n")
     }

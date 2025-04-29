@@ -14,6 +14,7 @@ struct BookDetailView: View {
     @StateObject private var viewModel: BookDetailViewModel
     @EnvironmentObject private var dataManager: ReadwiseDataManager
     @State private var searchText: String = "" // Suche bleibt vorerst im View State
+    @State private var isShareSheetPresented: Bool = false // Zustand für Share-Sheet
     @Environment(\.presentationMode) private var presentationMode // bleibt
 
     // Initializer für MainContentView, der den DataManager explizit übergibt
@@ -161,6 +162,20 @@ struct BookDetailView: View {
         .navigationTitle(book.title)
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                if !viewModel.highlights.isEmpty {
+                    Button {
+                        isShareSheetPresented = true
+                    } label: {
+                        Image(systemName: "square.and.arrow.up")
+                    }
+                }
+            }
+        }
+        .sheet(isPresented: $isShareSheetPresented) {
+            ActivityView(activityItems: [viewModel.allHighlightsText])
+        }
         #endif
         .task(id: book.id) {
             // Lade Highlights nur beim ersten Wechsel der Buch-ID
