@@ -8,6 +8,7 @@ public struct MainContentView: View {
     @State private var searchText: String = ""
     @State private var selectedCategory: String? = nil
     @State private var selectedBook: BookPreview? = nil
+    @State private var cachedCategoryList: [String] = ["Alle"] // Cache for performance
     
     // Helper struct to make categories identifiable
     struct IdentifiableCategory: Identifiable {
@@ -17,10 +18,7 @@ public struct MainContentView: View {
 
     // Liste der verfügbaren Kategorien
     var categoryList: [String] {
-        // Extrahiere einzigartige Kategorien aus den geladenen Büchern
-        let categories = Set(dataManager.fullyLoadedBooks.map { $0.category })
-        // Sortiere und füge "Alle" am Anfang hinzu
-        return ["Alle"] + categories.sorted()
+        return cachedCategoryList
     }
 
     // Gefilterte Bücher basierend auf Suche UND Kategorie
@@ -113,11 +111,15 @@ public struct MainContentView: View {
                 if dataManager.fullyLoadedBooks.isEmpty && dataManager.loadingState == .idle {
                     dataManager.loadBooks()
                 }
+                updateCategoryList()
             }
             .onChange(of: geometry.size) { newSize in
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                     setSplitViewPosition(width: newSize.width)
                 }
+            }
+            .onChange(of: dataManager.fullyLoadedBooks) { _ in
+                updateCategoryList()
             }
             #else
             .onAppear {
@@ -125,6 +127,10 @@ public struct MainContentView: View {
                 if dataManager.fullyLoadedBooks.isEmpty && dataManager.loadingState == .idle {
                     dataManager.loadBooks()
                 }
+                updateCategoryList()
+            }
+            .onChange(of: dataManager.fullyLoadedBooks) { _ in
+                updateCategoryList()
             }
             #endif
             .sheet(isPresented: $dataManager.shouldShowAPIKeyView) {
@@ -161,6 +167,12 @@ public struct MainContentView: View {
         } label: {
             Label("API-Key", systemImage: "key")
         }
+    }
+    
+    // Update cached category list for performance
+    private func updateCategoryList() {
+        let categories = Set(dataManager.fullyLoadedBooks.map { $0.category })
+        cachedCategoryList = ["Alle"] + categories.sorted()
     }
     
     #if os(macOS)

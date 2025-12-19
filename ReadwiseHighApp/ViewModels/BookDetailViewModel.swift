@@ -15,12 +15,15 @@ class BookDetailViewModel: ObservableObject {
     @Published var isLoadingHighlights: Bool = false
     @Published var highlightError: String? = nil
     @Published var copySuccessMessage: Bool = false // Zustand für Kopiervorgang
+    
+    // Cached sorted highlights for performance (recomputed only when highlights change)
+    private var cachedSortedHighlights: [HighlightItem] = []
 
     // MARK: - Computed Properties
     var filteredHighlights: [HighlightItem] {
         // Suchlogik (falls wir sie später wieder hinzufügen wollen)
-        // Hier vorerst alle Highlights zurückgeben
-        return highlights
+        // Hier vorerst alle sortierten Highlights zurückgeben
+        return cachedSortedHighlights
     }
 
     var allHighlightsText: String {
@@ -74,6 +77,7 @@ class BookDetailViewModel: ObservableObject {
                  case .success(let fetchedHighlights):
                      print("✅ [ViewModel] Highlights geladen: \(fetchedHighlights.count) Stück")
                      self.highlights = fetchedHighlights
+                     self.cachedSortedHighlights = fetchedHighlights.sorted(by: { $0.page < $1.page })
                      self.highlightError = nil
                  case .failure(let error):
                      print("❌ [ViewModel] Fehler beim Laden der Highlights: \(error)")

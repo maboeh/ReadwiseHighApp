@@ -9,7 +9,7 @@ import AppKit
 
 
 struct BookCardView: View {
-    let book: Any // Verwende Any um Typprobleme zu vermeiden
+    let book: BookPreview // Use proper type instead of Any
     
     // Environment-Variablen
     @State private var image: Image?
@@ -61,23 +61,23 @@ struct BookCardView: View {
             
             // Informations-Bereich
             VStack(alignment: .leading, spacing: 8) {
-                Text(title)
+                Text(book.title)
                     .font(.headline)
                     .lineLimit(2)
                     .foregroundColor(.primary)
                     .fixedSize(horizontal: false, vertical: true)
 
-                Text(author)
+                Text(book.author)
                     .font(.subheadline)
                     .foregroundColor(.secondary)
                     .lineLimit(1)
 
                 HStack {
-                    Text("\(numHighlights) Highlights")
+                    Text("\(book.numHighlights) Highlights")
                         .font(.caption)
                         .foregroundColor(.secondary)
                     Spacer()
-                    SourceCategoryBadge(category: category)
+                    SourceCategoryBadge(category: book.category)
                 }
             }
             .padding(.horizontal, 12)
@@ -105,102 +105,33 @@ struct BookCardView: View {
         #endif
     }
     
-    // Hilfsfunktionen, die die Eigenschaften des Books auslesen
-    
-    // Titel des Buches
-    private var title: String {
-        if let book = book as? (any Identifiable) {
-            // Dynamisches Abrufen der Titel-Eigenschaft mit Mirror
-            let mirror = Mirror(reflecting: book)
-            if let titleProperty = mirror.children.first(where: { $0.label == "title" })?.value as? String {
-                return titleProperty
-            }
-        }
-        return "Unbekannter Titel"
-    }
-    
-    // Autor des Buches
-    private var author: String {
-        if let book = book as? (any Identifiable) {
-            let mirror = Mirror(reflecting: book)
-            if let authorProperty = mirror.children.first(where: { $0.label == "author" })?.value as? String {
-                return authorProperty
-            }
-        }
-        return "Unbekannter Autor"
-    }
-    
-    // Kategorie des Buches
-    private var category: String {
-        if let book = book as? (any Identifiable) {
-            let mirror = Mirror(reflecting: book)
-            if let categoryProperty = mirror.children.first(where: { $0.label == "category" })?.value as? String {
-                return categoryProperty
-            }
-        }
-        return "Unbekannt"
-    }
-    
-    // Anzahl der Highlights
-    private var numHighlights: Int {
-        if let book = book as? (any Identifiable) {
-            let mirror = Mirror(reflecting: book)
-            if let numProperty = mirror.children.first(where: { $0.label == "numHighlights" })?.value as? Int {
-                return numProperty
-            }
-        }
-        return 0
-    }
-    
-    // Cover-URL des Buches
-    private var coverImageURL: URL? {
-        if let book = book as? (any Identifiable) {
-            let mirror = Mirror(reflecting: book)
-            if let urlProperty = mirror.children.first(where: { $0.label == "coverImageURL" })?.value as? URL {
-                return urlProperty
-            }
-        }
-        return nil
-    }
-
     private func loadImage() {
         self.image = nil
         self.showErrorIcon = false
         self.isLoadingImage = false
 
-        guard let url = coverImageURL else {
+        guard let url = book.coverImageURL else {
             return
         }
 
         self.isLoadingImage = true
 
-        // Verwende DispatchQueue für den Bildladeprozess
-        DispatchQueue.global(qos: .userInitiated).async {
-            if let data = try? Data(contentsOf: url) {
-                DispatchQueue.main.async {
-                    self.isLoadingImage = false
-                    
+        // Use ImageCacheManager for efficient image loading with caching
+        ImageCacheManager.shared.loadImage(from: url) { result in
+            DispatchQueue.main.async {
+                self.isLoadingImage = false
+                
+                switch result {
+                case .success(let platformImage):
                     #if os(iOS)
-                    if let uiImage = UIImage(data: data) {
-                        self.image = Image(uiImage: uiImage)
-                        self.showErrorIcon = false
-                    } else {
-                        self.showErrorIcon = true
-                    }
+                    self.image = Image(uiImage: platformImage)
                     #elseif os(macOS)
-                    if let nsImage = NSImage(data: data) {
-                        self.image = Image(nsImage: nsImage)
-                        self.showErrorIcon = false
-                    } else {
-                        self.showErrorIcon = true
-                    }
+                    self.image = Image(nsImage: platformImage)
                     #endif
-                }
-            } else {
-                DispatchQueue.main.async {
-                    self.isLoadingImage = false
+                    self.showErrorIcon = false
+                case .failure(let error):
                     self.showErrorIcon = true
-                    print("❌ Fehler beim Laden des Bildes von \(url.absoluteString)")
+                    print("❌ Fehler beim Laden des Bildes von \(url.absoluteString): \(error.localizedDescription)")
                 }
             }
         }
