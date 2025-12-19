@@ -111,15 +111,11 @@ public struct MainContentView: View {
                 if dataManager.fullyLoadedBooks.isEmpty && dataManager.loadingState == .idle {
                     dataManager.loadBooks()
                 }
-                updateCategoryList()
             }
             .onChange(of: geometry.size) { newSize in
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                     setSplitViewPosition(width: newSize.width)
                 }
-            }
-            .onChange(of: dataManager.fullyLoadedBooks) { _ in
-                updateCategoryList()
             }
             #else
             .onAppear {
@@ -127,12 +123,11 @@ public struct MainContentView: View {
                 if dataManager.fullyLoadedBooks.isEmpty && dataManager.loadingState == .idle {
                     dataManager.loadBooks()
                 }
-                updateCategoryList()
             }
+            #endif
             .onChange(of: dataManager.fullyLoadedBooks) { _ in
                 updateCategoryList()
             }
-            #endif
             .sheet(isPresented: $dataManager.shouldShowAPIKeyView) {
                 APIKeyView(isPresented: $dataManager.shouldShowAPIKeyView)
                     .environmentObject(dataManager)
