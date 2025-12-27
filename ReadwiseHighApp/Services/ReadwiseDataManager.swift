@@ -14,6 +14,19 @@ public class ReadwiseDataManager: ObservableObject {
     // API Service wird injiziert
     private let apiService: ReadwiseAPIService
 
+    // Cached date formatters to avoid repeated creation (performance optimization)
+    private let iso8601Formatter: ISO8601DateFormatter = {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return formatter
+    }()
+    
+    private let iso8601FormatterNoMillis: ISO8601DateFormatter = {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime]
+        return formatter
+    }()
+
     // Dependency Injection im Initializer
     private init(apiService: ReadwiseAPIService = .shared) {
         self.apiService = apiService
@@ -114,17 +127,6 @@ public class ReadwiseDataManager: ObservableObject {
 
     /// Mappt eine BooksAPIResponse zu einem Array von BookPreview-Objekten
     private func mapBooks(from apiResponse: BooksAPIResponse) -> [BookPreview] {
-        let iso8601Formatter: ISO8601DateFormatter = {
-            let formatter = ISO8601DateFormatter()
-            formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-            return formatter
-        }()
-        let iso8601FormatterNoMillis: ISO8601DateFormatter = {
-            let formatter = ISO8601DateFormatter()
-            formatter.formatOptions = [.withInternetDateTime]
-            return formatter
-        }()
-
         return apiResponse.results.map { apiBook -> BookPreview in
             var highlightDate: Date? = nil
             if let dateString = apiBook.last_highlight_at {
@@ -150,17 +152,6 @@ public class ReadwiseDataManager: ObservableObject {
 
     /// Mappt eine HighlightsAPIResponse zu einem Array von HighlightItem-Objekten
     private func mapHighlights(from apiResponse: HighlightsAPIResponse) -> [HighlightItem] {
-        let iso8601Formatter: ISO8601DateFormatter = {
-            let formatter = ISO8601DateFormatter()
-            formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-            return formatter
-        }()
-        let iso8601FormatterNoMillis: ISO8601DateFormatter = {
-            let formatter = ISO8601DateFormatter()
-            formatter.formatOptions = [.withInternetDateTime]
-            return formatter
-        }()
-
         return apiResponse.results.map { apiHighlight -> HighlightItem in
             var highlightDate: Date = Date()
             if let dateString = apiHighlight.highlighted_at {
