@@ -3,6 +3,7 @@
 **Datum:** 2026-01-25
 **Analysiert von:** Claude Security Audit
 **App-Version:** Aktueller Stand (commit 7f46286)
+**Letzte Aktualisierung:** 2026-01-25 (Security Fixes implementiert)
 
 ---
 
@@ -10,15 +11,26 @@
 
 Die ReadwiseHighApp ist eine iOS/macOS-Anwendung zur Anzeige von Readwise-Highlights. Die Sicherheitsanalyse basiert auf den **OWASP Mobile Top 10** Richtlinien und allgemeinen iOS-Sicherheitspraktiken.
 
-### Risikobewertung
+### Risikobewertung (nach Fixes)
 
-| Kategorie | Bewertung | Priorität |
-|-----------|-----------|-----------|
-| Datenspeicherung | ⚠️ Mittel | Hoch |
-| Netzwerkkommunikation | ⚠️ Mittel | Hoch |
-| Authentifizierung | ✅ Gut | - |
-| Code-Qualität | ⚠️ Mittel | Mittel |
-| Logging/Debug | ⚠️ Mittel | Mittel |
+| Kategorie | Vorher | Nachher | Status |
+|-----------|--------|---------|--------|
+| Datenspeicherung | ⚠️ Mittel | ✅ Gut | BEHOBEN |
+| Netzwerkkommunikation | ⚠️ Mittel | ✅ Gut | BEHOBEN |
+| Authentifizierung | ✅ Gut | ✅ Gut | - |
+| Code-Qualität | ⚠️ Mittel | ✅ Gut | BEHOBEN |
+| Logging/Debug | ⚠️ Mittel | ✅ Gut | BEHOBEN |
+
+### Behobene Sicherheitsprobleme (Commit 2846c9e)
+
+| # | Problem | Fix | Datei |
+|---|---------|-----|-------|
+| 1 | Fehlende Keychain Access Controls | `kSecAttrAccessibleWhenPasscodeSetThisDeviceOnly` | KeychainHelper.swift |
+| 2 | Kein Certificate Pinning | CertificatePinningDelegate implementiert | ReadwiseAPIService.swift |
+| 3 | Debug-Logs in Production | `#if DEBUG` Wrapper | Mehrere Dateien |
+| 4 | Unverschlüsselter Disk-Cache | `NSFileProtectionComplete` | ImageCacheManager.swift |
+| 5 | API-Key vor Validierung gespeichert | Speicherung nach Server-Check | APIKeyView.swift |
+| 6 | Unsichere Runtime-Reflection | Direkte Referenzen | NetworkMonitor.swift |
 
 ---
 
