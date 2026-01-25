@@ -7,16 +7,29 @@ public struct KeychainHelper {
     private init() {}
 
     /// Speichert einen String unter einem Service/Account im Keychain
+    /// Verwendet sichere Zugriffskontrollen für maximalen Schutz
     public func save(_ value: String, service: String, account: String) throws {
         let data = Data(value.utf8)
+
+        // Sichere Keychain-Konfiguration:
+        // - kSecAttrAccessibleWhenPasscodeSetThisDeviceOnly: Nur zugänglich wenn Gerät entsperrt
+        //   und Passcode gesetzt ist. Wird NICHT in Backups übertragen.
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
             kSecAttrAccount as String: account,
-            kSecValueData as String: data
+            kSecValueData as String: data,
+            kSecAttrAccessible as String: kSecAttrAccessibleWhenPasscodeSetThisDeviceOnly
         ]
+
         // Vorherigen Eintrag löschen (falls vorhanden)
-        SecItemDelete(query as CFDictionary)
+        let deleteQuery: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: account
+        ]
+        SecItemDelete(deleteQuery as CFDictionary)
+
         // Neuen Eintrag hinzufügen
         let status = SecItemAdd(query as CFDictionary, nil)
         guard status == errSecSuccess else {

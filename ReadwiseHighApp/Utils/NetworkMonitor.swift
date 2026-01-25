@@ -138,7 +138,9 @@ public class NetworkMonitor: ObservableObject {
     private func processPendingRequests() {
         guard !pendingRequests.isEmpty else { return }
 
+        #if DEBUG
         print("🌐 Verarbeite \(pendingRequests.count) ausstehende Netzwerkanfragen")
+        #endif
 
         // Kopiere die Anfragen und leere die Liste
         let requests = pendingRequests
@@ -163,7 +165,7 @@ public class NetworkMonitor: ObservableObject {
     /// Prüft, ob eine Ressource im Offline-Modus nicht verfügbar ist
     /// - Parameters:
     ///   - url: Die URL der Ressource
-    ///   - cacheCheckBlock: Eine Closure, die prüft, ob die Ressource im Cache ist
+    ///   - cacheCheck: Eine optionale Closure, die prüft, ob die Ressource im Cache ist
     /// - Returns: True, wenn offline und die Ressource nicht im Cache ist
     public func isOfflineAndNotCached(for url: URL, cacheCheck: (() -> Bool)? = nil) -> Bool {
         if !isConnected {
@@ -172,19 +174,12 @@ public class NetworkMonitor: ObservableObject {
                 return !cacheCheck()
             }
 
-            // Fallback zum ImageCacheManager (wenn verfügbar)
-            if let imageManager = NSClassFromString("ImageCacheManager") as? NSObject.Type,
-               let sharedInstance = imageManager.value(forKey: "shared") as? NSObject {
-                let selector = NSSelectorFromString("getCachedImage:")
-                if sharedInstance.responds(to: selector) {
-                    let result = sharedInstance.perform(selector, with: url)
-                    return result?.takeUnretainedValue() == nil
-                }
-            }
-
-            // Wenn keine speziellen Prüfungen möglich sind, gehen wir davon aus, 
-            // dass im Offline-Modus kein Zugriff möglich ist
-            return true
+            // SICHERHEIT: Direkte Referenz auf ImageCacheManager statt Runtime-Reflection
+            // Dies ist typsicher und vermeidet potenzielle Runtime-Manipulation
+            let cacheKey = ImageCacheManager.shared.cacheKey(for: url)
+            let cachedImage = ImageCacheManager.shared.getImageFromMemoryCache(forKey: cacheKey)
+                ?? ImageCacheManager.shared.getImageFromDiskCache(forKey: cacheKey)
+            return cachedImage == nil
         }
         return false
     }
@@ -274,18 +269,15 @@ extension NetworkMonitor {
     /// Prüft, ob das Gerät im Offline-Modus ist und ob gecachte Bilder verfügbar sind
     /// - Parameter url: Die URL des zu überprüfenden Bildes
     /// - Returns: True, wenn wir im Offline-Modus sind und das Bild nicht im Cache ist
-    public func isOfflineAndNotCached(for url: URL) -> Bool {
+    /// HINWEIS: Diese Methode existiert für Abwärtskompatibilität.
+    /// Verwende stattdessen isOfflineAndNotCached(for:cacheCheck:) für neue Implementierungen.
+    public func checkOfflineAndNotCached(for url: URL) -> Bool {
         if !isConnected {
-            // Direkt auf ImageCacheManager zugreifen, da er in dieser App verfügbar ist
-            if let imageManager = NSClassFromString("ImageCacheManager") as? NSObject.Type,
-               let sharedInstance = imageManager.value(forKey: "shared") as? NSObject {
-                let selector = NSSelectorFromString("getCachedImage:")
-                if sharedInstance.responds(to: selector) {
-                    let result = sharedInstance.perform(selector, with: url)
-                    return result?.takeUnretainedValue() == nil
-                }
-            }
-            return true
+            // SICHERHEIT: Direkte Referenz auf ImageCacheManager statt Runtime-Reflection
+            let cacheKey = ImageCacheManager.shared.cacheKey(for: url)
+            let cachedImage = ImageCacheManager.shared.getImageFromMemoryCache(forKey: cacheKey)
+                ?? ImageCacheManager.shared.getImageFromDiskCache(forKey: cacheKey)
+            return cachedImage == nil
         }
         return false
     }
