@@ -54,11 +54,15 @@ public class ReadwiseDataManager: ObservableObject {
     public func loadBooks() {
         // Verhindere parallele Ladevorgänge
         guard loadingState != .loadingBooks && loadingState != .loadingHighlights else {
+            #if DEBUG
             print("ℹ️ Ladevorgang (Bücher) läuft bereits.")
+            #endif
             return
         }
 
+        #if DEBUG
         print("🚀 Starte Ladevorgang für Bücher...")
+        #endif
         loadingState = .loadingBooks
         
         apiService.fetchBooks { [weak self] result in
@@ -73,7 +77,9 @@ public class ReadwiseDataManager: ObservableObject {
                     self.fullyLoadedBooks = books
                     self.lastUpdate = Date()
                 case .failure(let error):
+                    #if DEBUG
                     print("❌ Fehler beim Laden der Bücher: \(error)")
+                    #endif
                     if let validationError = error as? ValidationError,
                        (validationError == .noKey || validationError == .invalidKey) {
                         // Zeige API-Key-Eingabe
@@ -90,12 +96,16 @@ public class ReadwiseDataManager: ObservableObject {
     /// Lädt die Highlights für ein bestimmtes Buch
     /// Gibt das Ergebnis über eine Completion zurück, damit die DetailView es verarbeiten kann
     public func loadHighlights(for bookId: Int, completion: @escaping (Result<[HighlightItem], Error>) -> Void) {
+        #if DEBUG
         print("🚀 Starte Ladevorgang für Highlights (Buch-ID: \(bookId))...")
+        #endif
 
         // Prüfe API Key direkt hier
         guard apiService.hasAPIKey() else {
             let error = ValidationError.noKey
+            #if DEBUG
             print("❌ Fehler beim Laden der Highlights: \(error)")
+            #endif
             handleAPIError(error) // Auch hier den Fehlerstatus setzen
             completion(.failure(error)) // Completion mit spezifischem Fehler aufrufen
             return
@@ -112,10 +122,14 @@ public class ReadwiseDataManager: ObservableObject {
                  case .success(let apiResponse):
                      // Mappe die API-Response zu HighlightItem-Objekten
                      let highlights = self.mapHighlights(from: apiResponse)
+                     #if DEBUG
                      print("✅ \(highlights.count) Highlights für Buch \(bookId) erfolgreich geladen.")
+                     #endif
                      completion(.success(highlights))
                  case .failure(let error):
+                     #if DEBUG
                      print("❌ Fehler beim Laden der Highlights für Buch \(bookId): \(error)")
+                     #endif
                      self.handleAPIError(error) // Fehler zentral im DataManager behandeln
                      completion(.failure(error)) // Completion mit Fehler aufrufen
                  }

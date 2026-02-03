@@ -17,6 +17,12 @@ struct BookDetailView: View {
     @State private var isShareSheetPresented: Bool = false // Zustand für Share-Sheet
     @Environment(\.presentationMode) private var presentationMode // bleibt
 
+    // Fabric Export States
+    @State private var isExportingToFabric: Bool = false
+    @State private var fabricExportSuccess: Bool = false
+    @State private var fabricExportError: String?
+    @State private var showFabricExportAlert: Bool = false
+
     // Initializer für MainContentView, der den DataManager explizit übergibt
     init(book: BookPreview, dataManager: ReadwiseDataManager) {
         self.book = book
@@ -24,8 +30,9 @@ struct BookDetailView: View {
     }
 
     var body: some View {
-        // Log beim Start der body-Berechnung
+        #if DEBUG
         let _ = print("🔄 BookDetailView body für Buch '\(book.title)' (ID: \(book.readwiseId ?? -1))")
+        #endif
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 // Header
@@ -64,6 +71,25 @@ struct BookDetailView: View {
                         Spacer()
 
                         if !viewModel.highlights.isEmpty {
+                            // Fabric Export Button
+                            Button(action: exportToFabric) {
+                                if isExportingToFabric {
+                                    ProgressView()
+                                        .progressViewStyle(CircularProgressViewStyle())
+                                        #if os(macOS)
+                                        .scaleEffect(0.7)
+                                        #endif
+                                } else {
+                                    Label("Fabric", systemImage: "square.and.arrow.up.on.square")
+                                }
+                            }
+                            .buttonStyle(.bordered)
+                            .disabled(isExportingToFabric)
+                            #if os(macOS)
+                            .controlSize(.large)
+                            #endif
+                            .help("Nach Fabric exportieren")
+
                             // Verwende ViewModel-Aktion
                             Button(action: viewModel.copyAllHighlightsToClipboard) {
                                 Label("Alle kopieren", systemImage: "doc.on.doc")
@@ -76,13 +102,13 @@ struct BookDetailView: View {
                     }
                     .padding(.horizontal)
 
-                   
+
 
                     // Anzeige Anzahl gefundener Highlights (basiert auf ViewModel)
                     if !searchText.isEmpty && !viewModel.highlights.isEmpty {
                         // TODO: Füge filteredHighlights zum ViewModel hinzu, wenn Suche wieder aktiv
                         Text("Suche aktiv - Anzeige gefilterter Highlights muss im VM implementiert werden")
-                        
+
                             .font(.caption)
                             .foregroundColor(.secondary)
                             .padding(.horizontal)
@@ -97,6 +123,21 @@ struct BookDetailView: View {
                                 .foregroundColor(.white)
                                 .padding()
                                 .background(Color.green)
+                                .clipShape(Capsule())
+                            Spacer()
+                        }
+                        .padding(.vertical)
+                        .transition(.opacity.combined(with: .scale))
+                    }
+
+                    // Fabric Export Erfolgs-Toast
+                    if fabricExportSuccess {
+                        HStack {
+                            Spacer()
+                            Label("Nach Fabric exportiert!", systemImage: "checkmark.circle.fill")
+                                .foregroundColor(.white)
+                                .padding()
+                                .background(Color.blue)
                                 .clipShape(Capsule())
                             Spacer()
                         }
@@ -133,9 +174,10 @@ struct BookDetailView: View {
                         LazyVStack(alignment: .leading, spacing: 15) {
                             // TODO: Füge filteredHighlights zum ViewModel hinzu, wenn Suche wieder aktiv
                             ForEach(viewModel.filteredHighlights) { highlight in
-                                // Drucke das Highlight, das an die Karte übergeben wird
+                                #if DEBUG
                                 let _ = print("-- Wird angezeigt: Highlight ID \(highlight.id), Text: '\(highlight.text)'")
-                                
+                                #endif
+
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text(highlight.text)
                                         .padding(.bottom, 5)
@@ -148,7 +190,7 @@ struct BookDetailView: View {
                                     .font(.caption)
                                     .foregroundColor(.secondary)
                                 }
-                                
+
                                 Divider()
                             }
                         }
@@ -177,11 +219,63 @@ struct BookDetailView: View {
             ActivityView(activityItems: [viewModel.allHighlightsText])
         }
         #endif
+        .alert("Fabric Export", isPresented: $showFabricExportAlert) {
+            Button("OK") {
+                fabricExportError = nil
+            }
+        } message: {
+            if let error = fabricExportError {
+                Text(error)
+            }
+        }
         .task(id: book.id) {
             // Lade Highlights nur beim ersten Wechsel der Buch-ID
             if viewModel.highlights.isEmpty {
+                #if DEBUG
                 print("➡️ BookDetailView: Lade Highlights für Buch '\(book.title)' (ID: \(book.readwiseId ?? -1))")
+                #endif
                 viewModel.loadHighlights()
+            }
+        }
+    }
+
+    // MARK: - Fabric Export
+
+    private func exportToFabric() {
+        guard !viewModel.highlights.isEmpty else { return }
+
+        isExportingToFabric = true
+
+        FabricExportService.shared.exportHighlights(for: book, highlights: viewModel.highlights) { result in
+            DispatchQueue.main.async {
+                isExportingToFabric = false
+
+                switch result {
+                case .success(let fileURL):
+                    #if DEBUG
+                    print("✅ Fabric Export erfolgreich: \(fileURL.path)")
+                    #endif
+
+                    // Erfolgs-Animation anzeigen
+                    withAnimation {
+                        fabricExportSuccess = true
+                    }
+
+                    // Nach 2 Sekunden ausblenden
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                        withAnimation {
+                            fabricExportSuccess = false
+                        }
+                    }
+
+                case .failure(let error):
+                    #if DEBUG
+                    print("❌ Fabric Export fehlgeschlagen: \(error.localizedDescription)")
+                    #endif
+
+                    fabricExportError = error.localizedDescription
+                    showFabricExportAlert = true
+                }
             }
         }
     }

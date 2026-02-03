@@ -9,6 +9,7 @@ public struct MainContentView: View {
     @State private var selectedCategory: String? = nil
     @State private var selectedBook: BookPreview? = nil
     @State private var cachedCategoryList: [String] = ["Alle"] // Cache for performance
+    @State private var showFabricSettings: Bool = false
     
     // Helper struct to make categories identifiable
     struct IdentifiableCategory: Identifiable {
@@ -139,7 +140,14 @@ public struct MainContentView: View {
             #if os(macOS)
             .toolbar {
                 ToolbarItem(placement: .automatic) { updateButton }
+                ToolbarItem(placement: .automatic) { fabricButton }
                 ToolbarItem(placement: .automatic) { apiKeyButton }
+            }
+            .sheet(isPresented: $showFabricSettings) {
+                NavigationView {
+                    FabricSettingsView()
+                }
+                .frame(width: 550, height: 500)
             }
             #endif
         }
@@ -161,6 +169,15 @@ public struct MainContentView: View {
             dataManager.shouldShowAPIKeyView = true
         } label: {
             Label("API-Key", systemImage: "key")
+        }
+    }
+
+    // Helper View für den Fabric-Button
+    private var fabricButton: some View {
+        Button {
+            showFabricSettings = true
+        } label: {
+            Label("Fabric", systemImage: "square.and.arrow.up.on.square")
         }
     }
     
@@ -211,6 +228,7 @@ public struct MainContentView: View {
         let categoryList: [String]
         let filteredBooks: [BookPreview]
         let columns: [GridItem]
+        @State private var showFabricSettings: Bool = false
 
         // Helper struct to make categories identifiable
         struct IdentifiableCategory: Identifiable {
@@ -239,7 +257,7 @@ public struct MainContentView: View {
                     }
                     .frame(height: 45)
                     .padding(.bottom, 5)
-                    
+
                     // Conditional content based on loading state and data
                     conditionalContent
                 }
@@ -247,11 +265,25 @@ public struct MainContentView: View {
                 .navigationBarTitleDisplayMode(.inline) // Optional: kleinerer Titel
                 .toolbar {
                     ToolbarItem(placement: .navigationBarTrailing) { updateButton }
-                    ToolbarItem(placement: .navigationBarTrailing) { apiKeyButton }
+                    ToolbarItem(placement: .navigationBarTrailing) { settingsMenu }
+                }
+                .sheet(isPresented: $showFabricSettings) {
+                    NavigationView {
+                        FabricSettingsView()
+                            .navigationTitle("Fabric Integration")
+                            .navigationBarTitleDisplayMode(.inline)
+                            .toolbar {
+                                ToolbarItem(placement: .navigationBarTrailing) {
+                                    Button("Fertig") {
+                                        showFabricSettings = false
+                                    }
+                                }
+                            }
+                    }
                 }
             }
         }
-        
+
         // Füge die Button-Definitionen HIER für IOSContentView hinzu
         private var updateButton: some View {
             Button {
@@ -261,12 +293,23 @@ public struct MainContentView: View {
             }
             .disabled(dataManager.loadingState.isLoading)
         }
-        
-        private var apiKeyButton: some View {
-            Button {
-                dataManager.shouldShowAPIKeyView = true
+
+        // Settings Menu mit API-Key und Fabric-Einstellungen
+        private var settingsMenu: some View {
+            Menu {
+                Button {
+                    dataManager.shouldShowAPIKeyView = true
+                } label: {
+                    Label("API-Key", systemImage: "key")
+                }
+
+                Button {
+                    showFabricSettings = true
+                } label: {
+                    Label("Fabric Export", systemImage: "square.and.arrow.up.on.square")
+                }
             } label: {
-                Label("API-Key", systemImage: "key")
+                Image(systemName: "ellipsis.circle")
             }
         }
 

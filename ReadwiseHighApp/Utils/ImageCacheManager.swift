@@ -81,21 +81,24 @@ class ImageCacheManager {
     private init() {
         // Konfigurieren des Memory-Cache
         memoryCache.countLimit = 100 // Maximal 100 Bilder im Speicher
-        
+
         // Pfad zum Cache-Verzeichnis ermitteln
         let fileManager = FileManager.default
         let cachesDirectory = fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first!
         diskCacheDirectory = cachesDirectory.appendingPathComponent("ImageCache")
-        
-        // Cache-Verzeichnis erstellen, falls es nicht existiert
+
+        // Cache-Verzeichnis erstellen mit File Protection
+        // NSFileProtectionComplete: Dateien nur zugänglich wenn Gerät entsperrt
         do {
-            try fileManager.createDirectory(at: diskCacheDirectory, 
-                                          withIntermediateDirectories: true, 
-                                          attributes: nil)
+            try fileManager.createDirectory(at: diskCacheDirectory,
+                                          withIntermediateDirectories: true,
+                                          attributes: [.protectionKey: FileProtectionType.complete])
         } catch {
+            #if DEBUG
             print("⚠️ Fehler beim Erstellen des Cache-Verzeichnisses: \(error)")
+            #endif
         }
-        
+
         // Alte Cache-Dateien im Hintergrund löschen
         DispatchQueue.global(qos: .background).async { [weak self] in
             self?.cleanOldCacheFiles()
@@ -207,27 +210,36 @@ class ImageCacheManager {
         #if os(macOS)
         // Für macOS: NSImage in PNG-Daten umwandeln
         guard let cgImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
+            #if DEBUG
             print("⚠️ Fehler beim Konvertieren des NSImage in PNG-Daten")
+            #endif
             return
         }
-        
+
         let bitmapRep = NSBitmapImageRep(cgImage: cgImage)
         guard let pngData = bitmapRep.representation(using: .png, properties: [:]) else {
+            #if DEBUG
             print("⚠️ Fehler beim Konvertieren des NSImage in PNG-Daten")
+            #endif
             return
         }
         #else
         // Für iOS: UIImage in PNG-Daten umwandeln
         guard let pngData = image.pngData() else {
+            #if DEBUG
             print("⚠️ Fehler beim Konvertieren des UIImage in PNG-Daten")
+            #endif
             return
         }
         #endif
-        
+
         do {
-            try pngData.write(to: fileURL)
+            // Schreibe Daten mit File Protection
+            try pngData.write(to: fileURL, options: [.completeFileProtection])
         } catch {
+            #if DEBUG
             print("⚠️ Fehler beim Speichern des Bildes auf der Festplatte: \(error)")
+            #endif
         }
     }
     
@@ -246,35 +258,39 @@ class ImageCacheManager {
                 try fileManager.removeItem(at: fileURL)
             }
         } catch {
+            #if DEBUG
             print("⚠️ Fehler beim Leeren des Disk-Cache: \(error)")
+            #endif
         }
     }
-    
+
     // MARK: - Private Hilfsmethoden
-    
+
     /// Löscht Cache-Dateien, die älter als maxCacheDays sind
     private func cleanOldCacheFiles() {
         let fileManager = FileManager.default
         let currentDate = Date()
-        
+
         do {
-            let fileURLs = try fileManager.contentsOfDirectory(at: diskCacheDirectory, 
-                                                             includingPropertiesForKeys: [.creationDateKey], 
+            let fileURLs = try fileManager.contentsOfDirectory(at: diskCacheDirectory,
+                                                             includingPropertiesForKeys: [.creationDateKey],
                                                              options: [])
-            
+
             for fileURL in fileURLs {
                 if let attributes = try? fileManager.attributesOfItem(atPath: fileURL.path),
                    let creationDate = attributes[.creationDate] as? Date {
-                    
+
                     let ageInDays = Calendar.current.dateComponents([.day], from: creationDate, to: currentDate).day ?? 0
-                    
+
                     if ageInDays > maxCacheDays {
                         try? fileManager.removeItem(at: fileURL)
                     }
                 }
             }
         } catch {
+            #if DEBUG
             print("⚠️ Fehler beim Bereinigen alter Cache-Dateien: \(error)")
+            #endif
         }
     }
 }

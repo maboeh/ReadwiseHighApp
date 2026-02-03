@@ -280,14 +280,8 @@ struct APIKeyView: View {
         self.isValidating = true
         self.validationMessage = nil
 
-        // Key speichern in Keychain
-        do {
-            try ReadwiseAPIService.shared.saveAPIKey(apiKey)
-        } catch {
-            self.isValidating = false
-            self.validationMessage = "Fehler beim Speichern des API-Schlüssels: \(error.localizedDescription)"
-            return
-        }
+        // SICHERHEIT: Key wird NICHT vor der Validierung gespeichert
+        // Erst nach erfolgreicher Server-Validierung wird der Key in die Keychain geschrieben
 
         let monitor = NWPathMonitor()
         monitor.pathUpdateHandler = { path in
@@ -295,10 +289,10 @@ struct APIKeyView: View {
                 monitor.cancel()
 
                 if path.status == .satisfied {
-                    continueWithKeyValidation()
+                    self.continueWithKeyValidation()
                 } else {
                     self.isValidating = false
-                    self.validationMessage = "Fehler: Keine Netzwerkverbindung. Der Schlüssel wurde trotzdem gespeichert. Du kannst das Fenster schließen."
+                    self.validationMessage = "Fehler: Keine Netzwerkverbindung. Der Schlüssel wurde NICHT gespeichert. Bitte versuche es erneut, wenn du online bist."
                     self.networkStatus = "⚠️ Netzwerk nicht verfügbar."
                 }
             }
@@ -308,32 +302,41 @@ struct APIKeyView: View {
     }
 
     private func continueWithKeyValidation() {
-        // Key wurde bereits gespeichert
-        validateApiKey { result in
+        // SICHERHEIT: Validiere den Key zuerst beim Server, bevor er gespeichert wird
+        validateApiKeyWithoutSaving(apiKey) { result in
             DispatchQueue.main.async {
                 self.isValidating = false
 
                 switch result {
                 case .success:
-                    self.validationMessage = "API-Schlüssel ist gültig!"
-                    self.isValid = true
+                    // Key ist gültig - JETZT erst in Keychain speichern
+                    do {
+                        try ReadwiseAPIService.shared.saveAPIKey(self.apiKey)
+                        self.validationMessage = "API-Schlüssel ist gültig und wurde sicher gespeichert!"
+                        self.isValid = true
 
-                    // Nach kurzer Verzögerung: Ladezustand zurücksetzen, API-Key-Status aktualisieren, Bücher laden und Maske schließen
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                        // Ladezustand zurücksetzen
-                        self.dataManager.loadingState = .idle
-                        // API-Key-View-Status aktualisieren
-                        self.dataManager.updateAPIKeyViewState()
-                        // Bücher laden
-                        self.dataManager.loadBooks()
-                        // Maske schließen
-                        self.isPresented = false
+                        // Nach kurzer Verzögerung: Ladezustand zurücksetzen, API-Key-Status aktualisieren, Bücher laden und Maske schließen
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                            // Ladezustand zurücksetzen
+                            self.dataManager.loadingState = .idle
+                            // API-Key-View-Status aktualisieren
+                            self.dataManager.updateAPIKeyViewState()
+                            // Bücher laden
+                            self.dataManager.loadBooks()
+                            // Maske schließen
+                            self.isPresented = false
+                        }
+                    } catch {
+                        self.validationMessage = "Der Schlüssel ist gültig, konnte aber nicht gespeichert werden: \(error.localizedDescription)"
+                        self.isValid = false
                     }
+
                 case .failure(let error):
+                    // Key ist ungültig - wird NICHT gespeichert
                     let errorMessage: String
                     switch error {
                     case .noKey:
-                        errorMessage = "Kein API-Schlüssel gefunden"
+                        errorMessage = "Kein API-Schlüssel eingegeben"
                     case .invalidKey:
                         errorMessage = "Der API-Schlüssel ist ungültig"
                     case .networkError(let err):
@@ -348,11 +351,54 @@ struct APIKeyView: View {
                         errorMessage = "Keine Daten vom Server erhalten."
                     }
 
-                    self.validationMessage = "Warnung: Der Schlüssel wurde gespeichert, aber die Prüfung ist fehlgeschlagen. Du kannst das Fenster schließen. Fehler: \(errorMessage)"
+                    self.validationMessage = "Fehler: \(errorMessage). Der Schlüssel wurde NICHT gespeichert."
                     self.isValid = false
                 }
             }
         }
+    }
+
+    /// Validiert den API-Key beim Server OHNE ihn vorher zu speichern
+    /// Dies verhindert, dass ungültige Keys in der Keychain landen
+    private func validateApiKeyWithoutSaving(_ key: String, completion: @escaping (Result<Void, ValidationError>) -> Void) {
+        guard !key.isEmpty else {
+            completion(.failure(.noKey))
+            return
+        }
+
+        // Einfache Format-Validierung (Readwise Keys sind typischerweise alphanumerisch)
+        let keyPattern = "^[a-zA-Z0-9]{20,}$"
+        if key.range(of: keyPattern, options: .regularExpression) == nil {
+            #if DEBUG
+            print("⚠️ API-Key Format-Validierung fehlgeschlagen")
+            #endif
+            // Trotzdem Server-Validierung durchführen (Format kann sich ändern)
+        }
+
+        let url = URL(string: "https://readwise.io/api/v2/books/")!
+        var request = URLRequest(url: url)
+        request.addValue("Token \(key)", forHTTPHeaderField: "Authorization")
+
+        URLSession.shared.dataTask(with: request) { _, response, error in
+            if let error = error {
+                completion(.failure(.networkError(error.localizedDescription)))
+                return
+            }
+
+            guard let httpResponse = response as? HTTPURLResponse else {
+                completion(.failure(.invalidResponse))
+                return
+            }
+
+            switch httpResponse.statusCode {
+            case 200...299:
+                completion(.success(()))
+            case 401:
+                completion(.failure(.invalidKey))
+            default:
+                completion(.failure(.serverError(httpResponse.statusCode)))
+            }
+        }.resume()
     }
 
     private func checkNetworkConnection() {
