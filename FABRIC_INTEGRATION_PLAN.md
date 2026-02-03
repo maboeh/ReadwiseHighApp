@@ -1,5 +1,42 @@
 # Fabric.so Integration Plan
 
+**Status: ✅ IMPLEMENTIERT**
+
+Die Fabric.so Integration wurde vollständig implementiert. Da Fabric.so keine öffentliche REST API hat, nutzt die App einen Cloud-Sync-Ansatz.
+
+## Implementierte Lösung
+
+### Funktionsweise
+
+```
+┌─────────────────────────┐     ┌──────────────────────┐     ┌─────────────────┐
+│   ReadwiseHighApp       │────▶│   Sync-Ordner        │────▶│   Fabric.so     │
+│   (Export als .md)      │     │   (iCloud/Dropbox)   │     │   (Auto-Sync)   │
+└─────────────────────────┘     └──────────────────────┘     └─────────────────┘
+```
+
+### Features
+
+| Feature | Beschreibung |
+|---------|--------------|
+| **Ein Dokument pro Buch** | Alle Highlights werden in einer Markdown-Datei zusammengefasst |
+| **Automatische Updates** | Bei erneutem Export wird dieselbe Datei überschrieben |
+| **Keine Duplikate** | Dateiname basiert auf Buchtitel → immer dieselbe Datei |
+| **Formatiertes Markdown** | Highlights als Zitate mit Metadaten (Seite, Kapitel, Datum) |
+| **Cloud-Sync Ready** | Funktioniert mit iCloud, Dropbox, Google Drive |
+
+### Neue Dateien
+
+- `Services/FabricExportService.swift` - Export-Logik und Markdown-Generierung
+- `Views/FabricSettingsView.swift` - Einstellungen für Export-Verzeichnis
+
+### Geänderte Dateien
+
+- `Views/BookDetailView.swift` - "Fabric" Export-Button hinzugefügt
+- `Views/MainContentView.swift` - Fabric-Einstellungen in Toolbar/Menu
+
+---
+
 ## Fabric.so API Analyse
 
 ### Was ist Fabric.so?
